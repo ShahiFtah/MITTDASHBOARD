@@ -1,11 +1,12 @@
 {
   "name": "mitt-dashboard",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Personlig dashboard med Spotify",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "release": "standard-version && git push --follow-tags && npm run build -- --publish always"
   },
   "dependencies": {
     "electron-log": "^5.4.3",
@@ -17,7 +18,8 @@
   },
   "devDependencies": {
     "electron": "^41.1.1",
-    "electron-builder": "^26.8.1"
+    "electron-builder": "^26.8.1",
+    "standard-version": "^9.5.0"
   },
   "build": {
     "appId": "com.dittdashboard.app",
