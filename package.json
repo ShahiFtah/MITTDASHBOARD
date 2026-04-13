@@ -1,6 +1,6 @@
 {
   "name": "mitt-dashboard",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "Personlig dashboard med Spotify",
   "main": "main.js",
   "scripts": {
@@ -8,6 +8,7 @@
     "build": "electron-builder"
   },
   "dependencies": {
+    "electron-log": "^5.4.3",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.8.3",
     "express": "^4.18.2",
@@ -24,7 +25,8 @@
     "publish": {
       "provider": "github",
       "owner": "ShahiFtah",
-      "repo": "MITTDASHBOARD"
+      "repo": "MITTDASHBOARD",
+      "releaseType": "release"
     },
     "win": {
       "target": "nsis",

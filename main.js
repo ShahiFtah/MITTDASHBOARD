@@ -8,6 +8,7 @@ const Store   = require('electron-store');
 const openBrowser = require('open');
 const { autoUpdater } = require('electron-updater');
 
+
 const store = new Store({ encryptionKey: 'mitt-dashboard-secret' });
 
 let mainWindow;
@@ -68,7 +69,6 @@ function createWindow() {
 ═══════════════════════════════════════════════════════════════ */
 /* ── Auto-updater setup ─────────────────────────────────────── */
 // Log update events to console — remove in production if desired
-autoUpdater.logger = require('electron').app;
 autoUpdater.autoDownload    = true;   // download silently in background
 autoUpdater.autoInstallOnAppQuit = true; // install when user quits
 
