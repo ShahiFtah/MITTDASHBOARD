@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Dashboard</title>
+<style>
+/* ══ RESET & TOKENS ══════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080c10; --bg2:#0d1218; --bg3:#121a22; --bg4:#182230; --bg5:#1e2c3a;
+  --border:#1e2d3d; --border2:#263748; --border3:#2e4258;
+  --text:#dde6ee; --muted:#8fa8bc; --faint:#4a6275;
+  --green:#1DB954; --green2:#1ed760;
+  --blue:#3d8fd4; --red:#d94f4f; --yellow:#e8a820;
+  --orange:#d9763a; --purple:#8b5fe0; --cyan:#2ac4c4;
+  --accent:#1DB954;
+  --r:10px; --rs:7px; --rl:14px;
+}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border3);border-radius:2px}
+
+/* ── Layout shell ─────────────────────────────────────────────────────── */
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;
+  display:flex;flex-direction:column;user-select:none;
+}
+.content{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border3) transparent;min-height:0}
+
+/* ── Titlebar ─────────────────────────────────────────────────────────── */
+.titlebar{
+  -webkit-app-region:drag;background:var(--bg2);border-bottom:1px solid var(--border);
+  height:42px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 12px;flex-shrink:0;position:relative;z-index:100;
+}
+.tb-left{display:flex;align-items:center;gap:8px}
+.status-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 8px var(--accent);animation:pulse 2.5s ease-in-out infinite;flex-shrink:0;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.app-title{font-size:10px;font-weight:700;color:var(--faint);letter-spacing:.18em;text-transform:uppercase}
+.sys-chips{display:flex;gap:4px;-webkit-app-region:no-drag}
+.chip{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--faint);font-variant-numeric:tabular-nums;transition:all .2s}
+.chip.warn{color:var(--yellow);border-color:rgba(232,168,32,.25)}
+.chip.crit{color:var(--red);border-color:rgba(217,79,79,.25)}
+.tb-right{display:flex;align-items:center;gap:10px;-webkit-app-region:no-drag}
+.clock-wrap{text-align:right;cursor:pointer}
+.clock{font-size:15px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:.03em}
+.clock-date{font-size:10px;color:var(--faint);margin-top:1px}
+.tbtn-row{display:flex;gap:3px}
+.tbtn{width:24px;height:24px;border-radius:50%;border:none;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;background:var(--bg3);color:var(--muted);transition:all .15s}
+.tbtn:hover{background:var(--border2);color:var(--text)}
+.tbtn.close:hover{background:var(--red);color:#fff}
+.tbtn.min:hover{background:var(--yellow);color:#000}
+.tbtn.cfg{font-size:14px}
+.tbtn.cfg.active{background:var(--bg5);color:var(--accent)}
+
+/* ── Offline banner ───────────────────────────────────────────────────── */
+
+/* ── Update banner ───────────────────────────────────────────────────── */
+.update-banner{background:rgba(61,143,212,.12);border-bottom:1px solid rgba(61,143,212,.25);padding:6px 14px;font-size:11px;color:var(--blue);display:none;align-items:center;justify-content:space-between;flex-shrink:0;gap:8px}
+.update-banner.show{display:flex}
+.update-install-btn{padding:3px 10px;border-radius:20px;border:1px solid var(--blue);background:transparent;color:var(--blue);font-size:10px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;-webkit-app-region:no-drag}
+.update-install-btn:hover{background:var(--blue);color:#fff}
+
+.offline-banner{background:rgba(217,79,79,.1);border-bottom:1px solid rgba(217,79,79,.2);padding:5px 14px;font-size:11px;color:var(--red);display:none;align-items:center;gap:6px;flex-shrink:0}
+.offline-banner.show{display:flex}
+
+/* ── Search bar ───────────────────────────────────────────────────────── */
+.search-wrap{padding:9px 13px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.search-row{display:flex;gap:6px;align-items:center}
+.search-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:7px 13px;color:var(--text);font-size:12px;outline:none;transition:all .15s;-webkit-app-region:no-drag}
+.search-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(61,143,212,.1)}
+.search-input::placeholder{color:var(--faint)}
+.se-btn{width:26px;height:26px;border-radius:50%;border:1px solid transparent;background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;-webkit-app-region:no-drag}
+.se-btn:hover,.se-btn.active{border-color:var(--border2);background:var(--bg4)}
+.se-btn.active{border-color:var(--blue)}
+
+/* ── Sections ─────────────────────────────────────────────────────────── */
+.section{border-bottom:1px solid var(--border);padding:12px 13px}
+.section:last-child{border-bottom:none}
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sec-header.toggle{cursor:pointer}
+.sec-header.toggle:hover .sec-label{color:var(--muted)}
+.sec-label{font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.12em;display:flex;align-items:center;gap:6px;transition:color .15s;pointer-events:none}
+.sec-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.chevron{font-size:9px;color:var(--faint);transition:transform .22s;margin-left:2px}
+.chevron.open{transform:rotate(90deg)}
+.sec-actions{display:flex;gap:5px;align-items:center}
+.collapsible{overflow:hidden;transition:max-height .28s ease,opacity .22s ease}
+.collapsible.closed{max-height:0!important;opacity:0;pointer-events:none}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.btn{padding:4px 11px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;-webkit-app-region:no-drag;white-space:nowrap}
+.btn:hover{border-color:var(--muted);color:var(--text)}
+.btn.green{border-color:var(--green);color:var(--green)}.btn.green:hover{background:var(--green);color:#000}
+.btn.red{border-color:var(--red);color:var(--red)}.btn.red:hover{background:var(--red);color:#fff}
+.btn.ghost{border-color:transparent;color:var(--faint);padding:3px 7px}.btn.ghost:hover{background:var(--bg3);color:var(--muted)}
+.btn.accent{border-color:var(--accent);color:var(--accent)}.btn.accent:hover{background:var(--accent);color:#000}
+.icon-btn{width:26px;height:26px;border-radius:var(--rs);border:none;background:var(--bg3);color:var(--faint);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;-webkit-app-region:no-drag}
+.icon-btn:hover{background:var(--bg4);color:var(--muted)}
+
+/* ── Apps grid ────────────────────────────────────────────────────────── */
+.apps-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.app-tile{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:9px 4px 7px;text-align:center;cursor:pointer;transition:all .15s;-webkit-app-region:no-drag;position:relative}
+.app-tile:hover{background:var(--bg4);border-color:var(--border2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.app-tile:active{transform:translateY(0) scale(.96)}
+.app-tile img{width:28px;height:28px;display:block;margin:0 auto 4px;border-radius:6px}
+.app-emoji{font-size:22px;line-height:28px;margin-bottom:4px}
+.app-label{font-size:9px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.del-btn{position:absolute;top:3px;right:3px;width:14px;height:14px;border-radius:50%;border:none;background:var(--red);color:#fff;font-size:9px;cursor:pointer;display:none;align-items:center;justify-content:center;-webkit-app-region:no-drag}
+.app-tile.custom:hover .del-btn{display:flex}
+.add-tile{border:1px dashed var(--border);border-radius:var(--r);padding:9px 4px;text-align:center;cursor:pointer;transition:all .15s;-webkit-app-region:no-drag;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:58px}
+.add-tile:hover{border-color:var(--faint);background:var(--bg3)}
+.add-tile .plus{font-size:16px;color:var(--faint)}
+.add-tile p{font-size:9px;color:var(--faint);margin-top:2px}
+
+/* ── Weather ──────────────────────────────────────────────────────────── */
+.wx-search{display:flex;gap:6px;margin-bottom:10px;position:relative}
+.wx-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:7px 10px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s;-webkit-app-region:no-drag}
+.wx-input:focus{border-color:var(--blue)}
+.wx-input::placeholder{color:var(--faint)}
+.ac-box{position:absolute;top:calc(100% + 2px);left:0;right:36px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rs);overflow:hidden;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.ac-item{padding:8px 10px;font-size:12px;cursor:pointer;color:var(--muted);transition:background .1s;-webkit-app-region:no-drag}
+.ac-item:hover{background:var(--bg3);color:var(--text)}
+.ac-item strong{color:var(--text)}
+.ac-item small{color:var(--faint);font-size:10px;margin-left:5px}
+.wx-now{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.wx-icon{font-size:42px;line-height:1;flex-shrink:0}
+.wx-temp{font-size:28px;font-weight:700;color:var(--text);line-height:1}
+.wx-desc{font-size:13px;color:var(--muted);margin-top:3px}
+.wx-feels{font-size:11px;color:var(--faint);margin-top:2px}
+.wx-loc{font-size:11px;color:var(--faint);margin-top:3px;display:flex;align-items:center;gap:4px}
+.wx-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.wx-stat{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:6px 8px}
+.wx-stat-lbl{font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.wx-stat-val{font-size:13px;font-weight:600;color:var(--text)}
+.wx-stat-unit{font-size:10px;color:var(--faint)}
+.uv-bar{height:4px;border-radius:2px;margin-top:4px;background:linear-gradient(to right,#4caf50,#ffeb3b,#ff9800,#f44336,#9c27b0)}
+.uv-dot{width:6px;height:6px;border-radius:50%;background:#fff;margin-top:-5px}
+.fc-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.fc-row::-webkit-scrollbar{display:none}
+.fc-day{flex-shrink:0;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:7px 8px;text-align:center;min-width:52px;cursor:default}
+.fc-day.today{border-color:var(--blue);background:rgba(61,143,212,.07)}
+.fc-lbl{font-size:9px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.fc-icon{font-size:16px;margin:4px 0}
+.fc-hi{font-size:12px;font-weight:700;color:var(--text)}
+.fc-lo{font-size:10px;color:var(--faint)}
+.fc-rain{font-size:9px;color:var(--blue);margin-top:2px}
+.sun-row{display:flex;gap:6px;margin-top:8px}
+.sun-item{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:6px 8px;display:flex;align-items:center;gap:6px}
+.sun-lbl{font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em}
+.sun-val{font-size:12px;font-weight:600;color:var(--text)}
+.wx-empty{text-align:center;padding:20px 0;color:var(--faint);font-size:12px}
+.wx-empty .big{font-size:28px;margin-bottom:7px}
+.wx-err{text-align:center;padding:14px 0;color:var(--red);font-size:12px}
+.wx-footer{font-size:10px;color:var(--faint);text-align:right;margin-top:5px}
+
+/* ── Todos ────────────────────────────────────────────────────────────── */
+.todo-input-row{display:flex;gap:5px;margin-bottom:8px;align-items:center}
+.todo-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:7px 10px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s;-webkit-app-region:no-drag}
+.todo-input:focus{border-color:var(--accent)}
+.todo-input::placeholder{color:var(--faint)}
+.prio-sel{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);color:var(--muted);font-size:11px;padding:5px 4px;outline:none;cursor:pointer;-webkit-app-region:no-drag;width:32px}
+.date-in{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:5px;color:var(--text);font-size:10px;outline:none;cursor:pointer;-webkit-app-region:no-drag;color-scheme:dark}
+.date-in:focus{border-color:var(--accent)}
+.filter-row{display:flex;gap:4px;margin-bottom:8px}
+.flt{padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--faint);font-size:10px;font-weight:600;cursor:pointer;transition:all .15s;-webkit-app-region:no-drag}
+.flt.active{border-color:var(--accent);color:var(--accent);background:rgba(29,185,84,.08)}
+.todo-progress{height:2px;background:var(--border);border-radius:1px;margin-bottom:8px;overflow:hidden}
+.todo-fill{height:100%;background:var(--accent);border-radius:1px;transition:width .4s ease}
+.todo-list{display:flex;flex-direction:column;gap:3px;max-height:200px;overflow-y:auto}
+.todo-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:var(--rs);background:var(--bg3);border:1px solid var(--border);transition:opacity .15s}
+.todo-item.done{opacity:.45}
+.todo-item.done .todo-text{text-decoration:line-through;color:var(--faint)}
+.todo-item.ph{border-left:2px solid var(--red)}
+.todo-item.pm{border-left:2px solid var(--yellow)}
+.todo-item.pl{border-left:2px solid var(--blue)}
+.todo-check{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border2);background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;-webkit-app-region:no-drag}
+.todo-check.on{background:var(--accent);border-color:var(--accent);color:#000;font-size:9px}
+.todo-text{flex:1;font-size:12px;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todo-due{font-size:9px;color:var(--faint);flex-shrink:0}
+.todo-due.ov{color:var(--red)}
+.todo-del{width:16px;height:16px;border-radius:4px;border:none;background:transparent;color:var(--faint);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;-webkit-app-region:no-drag}
+.todo-item:hover .todo-del{opacity:1}
+.todo-del:hover{color:var(--red)}
+.todo-footer{display:flex;align-items:center;justify-content:space-between;margin-top:7px;font-size:10px;color:var(--faint)}
+.todo-empty{text-align:center;padding:14px 0;color:var(--faint);font-size:12px}
+
+/* ── Habits ───────────────────────────────────────────────────────────── */
+.habit-add-row{display:flex;gap:6px;margin-bottom:8px}
+.habit-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:7px 10px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s;-webkit-app-region:no-drag}
+.habit-input:focus{border-color:var(--orange)}
+.habit-input::placeholder{color:var(--faint)}
+.habits-list{display:flex;flex-direction:column;gap:5px}
+.habit-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--rs);background:var(--bg3);border:1px solid var(--border)}
+.habit-name{flex:1;font-size:12px;color:var(--text)}
+.habit-streak{font-size:10px;color:var(--orange);font-weight:600;flex-shrink:0}
+.habit-days{display:flex;gap:3px}
+.hday{width:18px;height:18px;border-radius:4px;background:var(--border);cursor:pointer;transition:all .12s;-webkit-app-region:no-drag;display:flex;align-items:center;justify-content:center;font-size:8px}
+.hday.done{background:var(--accent);color:#000}
+.hday.today{box-shadow:0 0 0 1px var(--accent)}
+.habit-del{width:16px;height:16px;border-radius:4px;border:none;background:transparent;color:var(--faint);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;-webkit-app-region:no-drag}
+.habit-item:hover .habit-del{opacity:1}
+.habit-del:hover{color:var(--red)}
+.habits-empty{text-align:center;padding:12px 0;color:var(--faint);font-size:12px}
+
+/* ── Countdowns ───────────────────────────────────────────────────────── */
+.cd-add-row{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
+.cd-name-in{flex:1;min-width:90px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:6px 9px;color:var(--text);font-size:12px;outline:none;-webkit-app-region:no-drag}
+.cd-name-in:focus{border-color:var(--yellow)}
+.cd-name-in::placeholder{color:var(--faint)}
+.cd-date-in{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:6px 7px;color:var(--text);font-size:11px;outline:none;cursor:pointer;-webkit-app-region:no-drag;color-scheme:dark}
+.cd-date-in:focus{border-color:var(--yellow)}
+.cd-list{display:flex;flex-direction:column;gap:5px}
+.cd-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:var(--rs);background:var(--bg3);border:1px solid var(--border)}
+.cd-name{font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cd-time{font-size:11px;font-weight:600;color:var(--yellow);font-variant-numeric:tabular-nums;flex-shrink:0}
+.cd-time.soon{color:var(--red)}
+.cd-time.past{color:var(--faint)}
+.cd-del{width:16px;height:16px;border-radius:4px;border:none;background:transparent;color:var(--faint);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;-webkit-app-region:no-drag}
+.cd-item:hover .cd-del{opacity:1}
+.cd-del:hover{color:var(--red)}
+.cd-empty{text-align:center;padding:12px 0;color:var(--faint);font-size:12px}
+
+/* ── Notes ────────────────────────────────────────────────────────────── */
+.notes-toolbar{display:flex;gap:4px;margin-bottom:6px;align-items:center}
+.fmt-btn{padding:3px 7px;border-radius:5px;border:1px solid transparent;background:transparent;color:var(--faint);font-size:11px;font-weight:600;cursor:pointer;transition:all .12s;-webkit-app-region:no-drag}
+.fmt-btn:hover{background:var(--bg3);color:var(--muted)}
+.notes-area{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:9px 10px;color:var(--text);font-size:12px;outline:none;resize:none;line-height:1.65;font-family:inherit;transition:border-color .15s;-webkit-app-region:no-drag;min-height:90px;max-height:150px}
+.notes-area:focus{border-color:var(--accent)}
+.notes-area::placeholder{color:var(--faint)}
+.notes-footer{display:flex;justify-content:space-between;align-items:center;margin-top:5px;font-size:10px;color:var(--faint)}
+
+/* ── Pomodoro ─────────────────────────────────────────────────────────── */
+.pomo-wrap{display:flex;flex-direction:column;align-items:center;gap:11px}
+.pomo-display{position:relative;width:96px;height:96px}
+.pomo-svg{width:96px;height:96px;transform:rotate(-90deg)}
+.pomo-ring-bg{fill:none;stroke:var(--border2);stroke-width:5}
+.pomo-ring{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;stroke-dasharray:276;stroke-dashoffset:0;transition:stroke-dashoffset .5s linear,stroke .3s}
+.pomo-time{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pomo-digits{font-size:21px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1}
+.pomo-phase{font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.pomo-controls{display:flex;gap:7px}
+.pomo-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;-webkit-app-region:no-drag}
+.pomo-btn.primary{border-color:var(--accent);color:var(--accent)}.pomo-btn.primary:hover{background:var(--accent);color:#000}
+.pomo-btn:hover{border-color:var(--muted);color:var(--text)}
+.pomo-sessions{font-size:11px;color:var(--faint);text-align:center}
+.pomo-dots{display:flex;gap:5px;justify-content:center;margin-top:4px}
+.pomo-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);transition:background .3s}
+.pomo-dot.done{background:var(--accent)}
+.pomo-dot.active{background:var(--red);box-shadow:0 0 5px var(--red)}
+.pomo-today{font-size:10px;color:var(--faint);text-align:center}
+.pomo-today b{color:var(--green)}
+.pomo-config{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
+.pcfg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--faint)}
+.pcfg input{width:40px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;padding:3px 5px;color:var(--text);font-size:11px;text-align:center;outline:none;-webkit-app-region:no-drag}
+.pcfg input:focus{border-color:var(--accent)}
+
+/* ── Clipboard ────────────────────────────────────────────────────────── */
+.clip-add-row{display:flex;gap:6px;margin-bottom:8px}
+.clip-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:7px 10px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s;-webkit-app-region:no-drag}
+.clip-input:focus{border-color:var(--cyan)}
+.clip-input::placeholder{color:var(--faint)}
+.clip-list{display:flex;flex-direction:column;gap:3px;max-height:180px;overflow-y:auto}
+.clip-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:var(--rs);background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:all .15s;-webkit-app-region:no-drag}
+.clip-item:hover{background:var(--bg4);border-color:var(--border2)}
+.clip-item.copied{border-color:var(--accent);background:rgba(29,185,84,.05)}
+.clip-text{flex:1;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clip-time{font-size:9px;color:var(--faint);flex-shrink:0}
+.clip-ic{font-size:11px;color:var(--faint);opacity:0;transition:opacity .15s;flex-shrink:0}
+.clip-item:hover .clip-ic{opacity:1}
+.clip-empty{text-align:center;padding:14px 0;color:var(--faint);font-size:12px}
+
+/* ── Spotify ──────────────────────────────────────────────────────────── */
+.sp-empty{text-align:center;padding:16px 0;color:var(--faint);font-size:12px}
+.music-top{display:flex;align-items:center;gap:11px;margin-bottom:10px}
+.album-art{width:50px;height:50px;border-radius:var(--rs);background:var(--bg3);border:1px solid var(--border);flex-shrink:0;object-fit:cover}
+.album-art-ph{width:50px;height:50px;border-radius:var(--rs);background:var(--bg3);border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:20px}
+.track-info{flex:1;min-width:0}
+.track-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track-artist{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:4px;color:var(--accent)}
+.bars{display:inline-flex;gap:2px;align-items:flex-end;height:10px}
+.bars span{display:block;width:2px;background:var(--accent);border-radius:1px;animation:bars .8s ease-in-out infinite}
+.bars span:nth-child(1){height:4px}.bars span:nth-child(2){height:8px;animation-delay:.15s}.bars span:nth-child(3){height:5px;animation-delay:.3s}
+@keyframes bars{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+.paused .bars span{animation-play-state:paused}
+
+/* Controls — 5 buttons: shuffle | prev | play | next | repeat */
+.sp-controls{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:9px}
+.ctrl{width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:var(--bg3);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s;-webkit-app-region:no-drag}
+.ctrl:hover{background:var(--bg4);color:var(--text);transform:scale(1.08)}
+.ctrl:active{transform:scale(.93)}
+.ctrl.play{width:40px;height:40px;background:var(--accent);border-color:var(--accent);color:#000;font-size:15px;box-shadow:0 0 14px rgba(29,185,84,.28)}
+.ctrl.play:hover{background:var(--green2)}
+/* lit = shuffle/repeat active state */
+.ctrl.lit{color:var(--accent);border-color:rgba(29,185,84,.4);background:rgba(29,185,84,.08)}
+
+.prog-wrap{margin-bottom:4px}
+.prog-bar{width:100%;height:4px;background:var(--bg3);border-radius:2px;cursor:pointer;position:relative;margin-bottom:4px;-webkit-app-region:no-drag}
+.prog-bar:hover .prog-fill{filter:brightness(1.2)}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .5s linear;width:0%;position:relative}
+.prog-fill::after{content:'';position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;background:#fff;opacity:0;transition:opacity .15s}
+.prog-bar:hover .prog-fill::after{opacity:1}
+.prog-times{display:flex;justify-content:space-between;font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
+.vol-row{display:flex;align-items:center;gap:6px;margin-top:8px}
+.vol-ic{color:var(--faint);font-size:13px;cursor:pointer;-webkit-app-region:no-drag}
+.vol-ic:hover{color:var(--muted)}
+input[type=range]{flex:1;-webkit-appearance:none;height:3px;border-radius:2px;background:var(--border2);outline:none;cursor:pointer;-webkit-app-region:no-drag}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--muted);cursor:pointer;transition:all .1s}
+input[type=range]:hover::-webkit-slider-thumb{background:var(--text);transform:scale(1.2)}
+.vol-pct{font-size:10px;color:var(--faint);width:24px;text-align:right;font-variant-numeric:tabular-nums}
+/* Playlist toggle — always visible below controls */
+.pl-toggle-row{text-align:center;margin-top:8px}
+.pl-section{margin-top:10px;border-top:1px solid var(--border);padding-top:8px}
+.pl-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.pl-title{font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+.pl-list{display:flex;flex-direction:column;gap:2px;max-height:160px;overflow-y:auto}
+.pl-item{display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:var(--rs);cursor:pointer;transition:background .12s;-webkit-app-region:no-drag}
+.pl-item:hover{background:var(--bg3)}
+.pl-thumb{width:26px;height:26px;border-radius:4px;object-fit:cover}
+.pl-thumb-ph{width:26px;height:26px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--faint)}
+.pl-name{flex:1;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-count{font-size:10px;color:var(--faint)}
+.pl-play{width:19px;height:19px;border-radius:50%;border:none;background:var(--accent);color:#000;font-size:8px;cursor:pointer;display:none;align-items:center;justify-content:center;-webkit-app-region:no-drag}
+.pl-item:hover .pl-play{display:flex}
+.dev-warn{background:rgba(232,168,32,.07);border:1px solid rgba(232,168,32,.2);border-radius:var(--rs);padding:7px 10px;margin-top:7px;font-size:11px;color:var(--yellow);line-height:1.5}
+.dev-warn strong{display:block;margin-bottom:2px}
+
+/* ── Settings panel ───────────────────────────────────────────────────── */
+.settings-panel{position:fixed;top:42px;right:0;bottom:0;width:230px;background:var(--bg2);border-left:1px solid var(--border);z-index:500;padding:14px;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease}
+.settings-panel.open{transform:translateX(0)}
+.s-title{font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px}
+.s-sect{font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin:12px 0 6px}
+.s-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.s-row:last-of-type{border-bottom:none}
+.s-label{font-size:12px;color:var(--text)}
+.s-sub{font-size:10px;color:var(--faint);margin-top:1px}
+.toggle-sw{position:relative;width:34px;height:18px;flex-shrink:0}
+.toggle-sw input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:var(--border2);border-radius:9px;cursor:pointer;transition:background .2s}
+.toggle-track::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s}
+.toggle-sw input:checked+.toggle-track{background:var(--accent)}
+.toggle-sw input:checked+.toggle-track::after{transform:translateX(16px)}
+.accent-grid{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.accent-dot{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;-webkit-app-region:no-drag}
+.accent-dot:hover,.accent-dot.active{border-color:#fff;transform:scale(1.15)}
+
+/* ── Modal ────────────────────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;z-index:1000;-webkit-app-region:no-drag;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);padding:18px;width:310px;animation:slideUp .2s ease;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+@keyframes slideUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:13px}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:10px;color:var(--faint);margin-bottom:4px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.field input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:7px 9px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s}
+.field input:focus{border-color:var(--accent)}
+.field input::placeholder{color:var(--faint)}
+.emoji-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:4px;max-height:120px;overflow-y:auto}
+.emo{width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:var(--bg3);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;-webkit-app-region:no-drag}
+.emo:hover{background:var(--bg4)}
+.emo.sel{border-color:var(--accent);background:rgba(29,185,84,.1)}
+.modal-footer{display:flex;gap:6px;justify-content:flex-end;margin-top:13px}
+
+/* ── Toast ────────────────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--bg4);border:1px solid var(--border2);border-radius:20px;padding:7px 14px;font-size:11px;color:var(--text);z-index:2000;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Misc ─────────────────────────────────────────────────────────────── */
+.spin{display:inline-block;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading{text-align:center;padding:14px 0;color:var(--faint);font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- TITLEBAR -->
+<div class="titlebar">
+  <div class="tb-left">
+    <span class="status-dot" id="status-dot"></span>
+    <span class="app-title">Dashboard</span>
+    <div class="sys-chips" id="sys-chips">
+      <span class="chip" id="chip-cpu">CPU —</span>
+      <span class="chip" id="chip-ram">RAM —</span>
+      <span class="chip" id="chip-bat" style="display:none">🔋 —</span>
+    </div>
+  </div>
+  <div class="tb-right">
+    <div class="clock-wrap" onclick="toggleClockFmt()" title="Bytt klokkeformat">
+      <div class="clock" id="clock"></div>
+      <div class="clock-date" id="clock-date"></div>
+    </div>
+    <div class="tbtn-row">
+      <button class="tbtn cfg" id="cfg-btn" onclick="toggleSettings()" title="Innstillinger">⚙</button>
+      <button class="tbtn" onclick="api.reload()" title="Last inn på nytt">&#8635;</button>
+      <button class="tbtn min" onclick="api.minimize()" title="Minimiser">&#8722;</button>
+      <button class="tbtn close" onclick="api.close()" title="Lukk">&#215;</button>
+    </div>
+  </div>
+</div>
+
+<!-- OFFLINE -->
+<div class="offline-banner" id="offline-banner">⚠ Ingen internettforbindelse — noen funksjoner er utilgjengelige</div>
+
+<!-- UPDATE BANNER -->
+<div class="update-banner" id="update-banner">
+  <span id="update-msg">🆕 Ny versjon tilgjengelig</span>
+  <button class="update-install-btn" id="update-btn" onclick="installUpdate()">Installer og start på nytt</button>
+</div>
+
+<!-- SEARCH -->
+<div class="search-wrap" id="search-wrap">
+  <div class="search-row">
+    <button class="se-btn active" id="se-google" onclick="setSE('google')" title="Google">🔍</button>
+    <button class="se-btn" id="se-ddg"    onclick="setSE('ddg')"    title="DuckDuckGo">🦆</button>
+    <button class="se-btn" id="se-yt"     onclick="setSE('yt')"     title="YouTube">▶</button>
+    <input class="search-input" id="search-input" type="text"
+      placeholder="Søk på Google…" onkeydown="onSearchKey(event)" autocomplete="off"/>
+    <button class="icon-btn" onclick="doSearch()">&#9654;</button>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- SNARVEIER -->
+<div class="section" id="sec-apps">
+  <div class="sec-header toggle" onclick="toggleSec('apps')">
+    <span class="sec-label"><span class="sec-dot" style="background:var(--blue)"></span>Snarveier<span class="chevron open" id="chev-apps">&#9656;</span></span>
+    <div class="sec-actions" onclick="event.stopPropagation()">
+      <button class="icon-btn" onclick="openAddModal()" title="Legg til">+</button>
+    </div>
+  </div>
+  <div class="collapsible" id="body-apps" style="max-height:300px">
+    <div class="apps-grid" id="apps-grid">
+      <div class="app-tile" onclick="electronAPI.openDiscord()"><img src="discord.png" alt="Discord"><div class="app-label">Discord</div></div>
+      <div class="app-tile" onclick="electronAPI.openChrome()"><img src="chrome.png" alt="Chrome"><div class="app-label">Chrome</div></div>
+      <div class="app-tile" onclick="electronAPI.openYouTube()"><img src="youtube.png" alt="YouTube"><div class="app-label">YouTube</div></div>
+      <div class="app-tile" onclick="electronAPI.openGoogle()"><img src="google.png" alt="Google"><div class="app-label">Google</div></div>
+      <div class="app-tile" onclick="electronAPI.openSpotify()"><img src="spotify.png" alt="Spotify"><div class="app-label">Spotify</div></div>
+      <div class="add-tile" id="add-tile" onclick="openAddModal()"><div class="plus">+</div><p>Legg til</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- VÆR -->
+<div class="section" id="sec-weather">
+  <div class="sec-header toggle" onclick="toggleSec('weather')">
+    <span class="sec-label"><span class="sec-dot" style="background:var(--yellow)"></span>Vær<span class="chevron open" id="chev-weather">&#9656;</span></span>
+    <div class="sec-actions" onclick="event.stopPropagation()">
+      <button class="icon-btn" onclick="detectLocation()" title="Bruk min posisjon">&#9678;</button>
+    </div>
+  </div>
+  <div class="collapsible" id="body-weather" style="max-height:600px">
+    <div class="wx-search">
+      <input class="wx-input" id="wx-input" type="text" placeholder="Søk etter by…"
+        oninput="onWxInput(this.value)" onkeydown="onWxKey(event)" autocomplete="off"/>
+      <button class="icon-btn" onclick="doWxSearch()">&#9654;</button>
+      <div class="ac-box" id="ac-box" style="display:none"></div>
+    </div>
+    <div id="wx-content"><div class="wx-empty"><div class="big">🌤</div>Søk etter en by, eller trykk posisjonsknappen</div></div>
+  </div>
+</div>
+
+<!-- GJØREMÅL -->
+<div class="section" id="sec-todo">
+  <div class="sec-header toggle" onclick="toggleSec('todo')">
+    <span class="sec-label"><span class="sec-dot" style="background:var(--orange)"></span>Gjøremål<span class="chevron open" id="chev-todo">&#9656;</span></span>
+    <div class="sec-actions" onclick="event.stopPropagation()">
+      <span id="todo-badge" style="font-size:10px;color:var(--faint)"></span>
+    </div>
+  </div>
+  <div class="collapsible" id="body-todo" style="max-height:400px">
+    <div class="todo-input-row">
+      <select class="prio-sel" id="todo-prio" title="Prioritet"><option value="">—</option><option value="h">🔴</option><option value="m">🟡</option><option value="l">🔵</option></select>
+      <input class="todo-input" id="todo-input" type="text" placeholder="Legg til oppgave…" onkeydown="onTodoKey(event)" maxlength="80"/>
+      <input type="date" class="date-in" id="todo-due" title="Frist"/>
+      <button class="icon-btn" onclick="addTodo()">+</button>
+    </div>
+    <div class="todo-progress"><div class="todo-fill" id="todo-fill" style="width:0%"></div></div>
+    <div class="filter-row">
+      <button class="flt active" id="flt-all"    onclick="setFilter('all')">Alle</button>
+      <button class="flt"        id="flt-active"  onclick="setFilter('active')">Aktive</button>
+      <button class="flt"        id="flt-done"    onclick="setFilter('done')">Fullførte</button>
+      <button class="flt"        id="flt-h"       onclick="setFilter('h')">🔴</button>
+    </div>
+    <div class="todo-list" id="todo-list"></div>
+    <div class="todo-footer">
+      <span id="todo-count"></span>
+      <button class="btn ghost" id="clear-done-btn" onclick="clearDone()" style="display:none">Fjern fullførte</button>
+    </div>
+  </div>
+</div>
+
+<!-- VANER -->
+<div class="section" id="sec-habits">
+  <div class="sec-header toggle" onclick="toggleSec('habits')">
+    <span class="sec-label"><span class="sec-dot" style="background:var(--orange)"></span>Vaner<span class="chevron open" id="chev-habits">&#9656;</span></span>
+    <div class="sec-actions" onclick="event.stopPropagation()">
+      <span id="habits-badge" style="font-size:10px;color:var(--faint)"></span>
+    </div>
+  </div>
+  <div class="collapsible" id="body-habits" style="max-height:350px">
+    <div class="habit-add-row">
+      <input class="habit-input" id="habit-input" type="text" placeholder="Ny vane… f.eks. Trening, Les 20 min" onkeydown="if(event.key==='Enter')addHabit()" maxlength="30"/>
+      <button class="icon-btn" onclick="addHabit()">+</button>
+    </div>
+    <div class="habits-list" id="habits-list"></div>
+  </div>
+</div>
+
+<!-- NEDTELLINGER -->
+<div class="section" id="sec-cd">
+  <div class="sec-header toggle" onclick="toggleSec('cd')">
+    <span class="sec-label"><span class="sec-dot" style="background:var(--yellow)"></span>Nedtellinger<span class="chevron open" id="chev-cd">&#9656;</span></span>
+  </div>
+  <div class="collapsible" id="body-cd" style="max-height:320px">
+    <div class="cd-add-row">
+      <input class="cd-name-in" id="cd-name" type="text" placeholder="Navn på hendelse…" maxlength="25"/>
+      <input class="cd-date-in" id="cd-date" type="datetime-local"/>
+      <button class="icon-btn" onclick="addCountdown()">+</button>
+    </div>
+    <div class="cd-list" id="cd-list"></div>
+  </div>
+</div>
+
+<!-- NOTATER -->
+<div class="section" id="sec-notes">
+  <div class="sec-header toggle" onclick="toggleSec('notes')">
+    <span class="sec-label"><span class="sec-dot" style="background:var(--purple)"></span>Notater<span class="chevron open" id="chev-notes">&#9656;</span></span>
+  </div>
+  <div class="collapsible" id="body-notes" style="max-height:260px">
+    <div class="notes-toolbar">
+      <button class="fmt-btn" onclick="fmtNote('bold')"><b>B</b></button>
+      <button class="fmt-btn" onclick="fmtNote('italic')"><i>I</i></button>
+      <button class="fmt-btn" onclick="fmtNote('bullet')">• —</button>
+      <span style="flex:1"></span>
+      <button class="btn ghost" onclick="clearNotes()">Tøm</button>
+    </div>
+    <textarea class="notes-area" id="notes-area" placeholder="Skriv et raskt notat…" oninput="onNotesInput()" rows="4"></textarea>
+    <div class="notes-footer">
+      <span id="notes-info">0 tegn · 0 ord</span>
+      <span id="notes-saved" style="color:var(--accent);opacity:0;transition:opacity .3s">Lagret ✓</span>
+    </div>
+  </div>
+</div>
+
+<!-- FOKUSTIMER -->
+<div class="section" id="sec-pomo">
+  <div class="sec-header toggle" onclick="toggleSec('pomo')">
+    <span class="sec-label"><span class="sec-dot" style="background:var(--red)"></span>Fokustimer<span class="chevron open" id="chev-pomo">&#9656;</span></span>
+    <div class="sec-actions" onclick="event.stopPropagation()">
+      <span id="pomo-hdr" style="font-size:10px;color:var(--faint)"></span>
+    </div>
+  </div>
+  <div class="collapsible" id="body-pomo" style="max-height:300px">
+    <div class="pomo-wrap">
+      <div class="pomo-display">
+        <svg class="pomo-svg" viewBox="0 0 100 100">
+          <circle class="pomo-ring-bg" cx="50" cy="50" r="44"/>
+          <circle class="pomo-ring" id="pomo-ring" cx="50" cy="50" r="44"/>
+        </svg>
+        <div class="pomo-time">
+          <div class="pomo-digits" id="pomo-digits">25:00</div>
+          <div class="pomo-phase" id="pomo-phase">Fokus</div>
+        </div>
+      </div>
+      <div class="pomo-controls">
+        <button class="pomo-btn primary" id="pomo-start" onclick="pomoToggle()">Start</button>
+        <button class="pomo-btn" onclick="pomoReset()">Nullstill</button>
+        <button class="pomo-btn" onclick="pomoSkip()" title="Hopp til neste fase">↷ Hopp</button>
+      </div>
+      <div><div class="pomo-sessions" id="pomo-sess">Økt 1 av 4</div><div class="pomo-dots" id="pomo-dots"></div></div>
+      <div class="pomo-today">I dag: <b id="pomo-today">0</b> min fokus</div>
+      <div class="pomo-config">
+        <div class="pcfg"><span>Fokus</span><input type="number" id="cfg-focus" value="25" min="1" max="90" onchange="pomoCfgChange()"/><span>min</span></div>
+        <div class="pcfg"><span>Pause</span><input type="number" id="cfg-break" value="5"  min="1" max="30" onchange="pomoCfgChange()"/><span>min</span></div>
+        <div class="pcfg"><span>Økter</span><input type="number" id="cfg-sess"  value="4"  min="1" max="12" onchange="pomoCfgChange()"/></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UTKLIPPSTAVLE -->
+<div class="section" id="sec-clip">
+  <div class="sec-header toggle" onclick="toggleSec('clip')">
+    <span class="sec-label"><span class="sec-dot" style="background:var(--cyan)"></span>Utklippstavle<span class="chevron open" id="chev-clip">&#9656;</span></span>
+    <div class="sec-actions" onclick="event.stopPropagation()">
+      <button class="btn ghost" onclick="clearClipboard()">Tøm</button>
+    </div>
+  </div>
+  <div class="collapsible" id="body-clip" style="max-height:300px">
+    <div class="clip-add-row">
+      <input class="clip-input" id="clip-input" type="text" placeholder="Legg til tekst manuelt…" onkeydown="if(event.key==='Enter')addClip()" maxlength="200"/>
+      <button class="icon-btn" onclick="addClip()" style="color:var(--cyan)">+</button>
+    </div>
+    <div class="clip-list" id="clip-list"></div>
+  </div>
+</div>
+
+<!-- SPOTIFY -->
+<div class="section" id="sec-spotify">
+  <div class="sec-header toggle" onclick="toggleSec('spotify')">
+    <span class="sec-label"><span class="sec-dot" style="background:var(--green)"></span>Spotify<span class="chevron open" id="chev-spotify">&#9656;</span></span>
+    <div class="sec-actions" onclick="event.stopPropagation()">
+      <button class="btn green" id="sp-login-btn"  onclick="doSpotifyLogin()">Logg inn</button>
+      <button class="btn red"   id="sp-logout-btn" onclick="doSpotifyLogout()" style="display:none">Logg ut</button>
+    </div>
+  </div>
+  <div class="collapsible" id="body-spotify" style="max-height:9999px">
+    <div id="sp-content"><div class="sp-empty">Logg inn for å se musikk</div></div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<!-- SETTINGS PANEL -->
+<div class="settings-panel" id="settings-panel">
+  <div class="s-title">⚙ Innstillinger</div>
+  <div class="s-sect">Utseende</div>
+  <div class="s-row"><div><div class="s-label">24t klokke</div></div>
+    <label class="toggle-sw"><input type="checkbox" id="s-24h" checked onchange="saveSetting('clock24h',this.checked);updateClock()"><span class="toggle-track"></span></label></div>
+  <div class="s-row"><div><div class="s-label">Søkefelt</div></div>
+    <label class="toggle-sw"><input type="checkbox" id="s-search" checked onchange="toggleSearchBar(this.checked)"><span class="toggle-track"></span></label></div>
+  <div class="s-row"><div><div class="s-label">Systeminfo</div><div class="s-sub">CPU / RAM i tittellinje</div></div>
+    <label class="toggle-sw"><input type="checkbox" id="s-sysinfo" checked onchange="toggleSysInfo(this.checked)"><span class="toggle-track"></span></label></div>
+  <div class="s-sect">Aksentfarge</div>
+  <div class="accent-grid" id="accent-grid">
+    <div class="accent-dot active" style="background:#1DB954" onclick="setAccent('#1DB954')" title="Grønn"></div>
+    <div class="accent-dot"        style="background:#3d8fd4" onclick="setAccent('#3d8fd4')" title="Blå"></div>
+    <div class="accent-dot"        style="background:#8b5fe0" onclick="setAccent('#8b5fe0')" title="Lilla"></div>
+    <div class="accent-dot"        style="background:#d94f4f" onclick="setAccent('#d94f4f')" title="Rød"></div>
+    <div class="accent-dot"        style="background:#e8a820" onclick="setAccent('#e8a820')" title="Gul"></div>
+    <div class="accent-dot"        style="background:#2ac4c4" onclick="setAccent('#2ac4c4')" title="Cyan"></div>
+  </div>
+  <div class="s-sect">Lyd</div>
+  <div class="s-row"><div class="s-label">Pomodoro-lyd</div>
+    <label class="toggle-sw"><input type="checkbox" id="s-sound" checked onchange="saveSetting('pomoSound',this.checked)"><span class="toggle-track"></span></label></div>
+  <div class="s-sect">Skjul seksjoner</div>
+  <div id="sec-vis"></div>
+  <div class="s-sect">Data</div>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+    <button class="btn ghost" onclick="exportData()" style="width:100%">⬇ Eksporter data</button>
+    <button class="btn red"   onclick="confirmReset()" style="width:100%">🗑 Nullstill alt</button>
+  </div>
+</div>
+
+<!-- SHORTCUT MODAL -->
+<div class="overlay" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title">Legg til snarvei</div>
+    <div class="field"><label>Navn</label><input id="sc-name" placeholder="f.eks. VS Code" maxlength="20"/></div>
+    <div class="field"><label>URL eller app-sti</label><input id="sc-path" placeholder="https://… eller C:\Program Files\…"/></div>
+    <div class="field"><label>Ikon</label><div class="emoji-grid" id="emoji-grid"></div></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Avbryt</button>
+      <button class="btn green" onclick="saveShortcut()">Lagre</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONSTANTS & STORAGE HELPERS
+═══════════════════════════════════════════════════════════════════════════ */
+const LS = {
+  get: (k, d) => { try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : d; } catch { return d; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+const DAYS   = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+const MONTHS = ['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'];
+const WDAYS  = ['Søn','Man','Tir','Ons','Tor','Fre','Lør'];
+const WMO_MAP = {
+  0:{e:'☀️',d:'Klarvær'},1:{e:'🌤',d:'Lettskyet'},2:{e:'⛅',d:'Delvis skyet'},3:{e:'☁️',d:'Overskyet'},
+  45:{e:'🌫',d:'Tåke'},48:{e:'🌫',d:'Rimtåke'},
+  51:{e:'🌦',d:'Yr'},53:{e:'🌦',d:'Moderat yr'},55:{e:'🌧',d:'Kraftig yr'},
+  61:{e:'🌧',d:'Lett regn'},63:{e:'🌧',d:'Moderat regn'},65:{e:'🌧',d:'Kraftig regn'},
+  71:{e:'🌨',d:'Lett snø'},73:{e:'🌨',d:'Moderat snø'},75:{e:'❄️',d:'Kraftig snø'},
+  80:{e:'🌦',d:'Lette regnbyger'},81:{e:'🌧',d:'Regnbyger'},82:{e:'⛈',d:'Kraftige byger'},
+  95:{e:'⛈',d:'Torden'},96:{e:'⛈',d:'Torden med hagl'},99:{e:'⛈',d:'Kraftig torden'},
+};
+
+const EMOJIS = ['🌐','💻','📧','📁','🎮','🎵','📺','🔧','⚙️','🚀','📝','🎯',
+  '🖥️','💡','📊','🔗','🗂️','🎨','🔒','📱','🌙','⭐','🔔','📌','🎬','🌍','📷','🎧','🛒','📚'];
+
+const SE_URLS = {
+  google: 'https://www.google.com/search?q=',
+  ddg:    'https://duckduckgo.com/?q=',
+  yt:     'https://www.youtube.com/results?search_query=',
+};
+const SE_LABELS = { google: 'Søk på Google…', ddg: 'Søk med DuckDuckGo…', yt: 'Søk på YouTube…' };
+
+const SEC_META = [
+  {id:'apps',    label:'Snarveier'},
+  {id:'weather', label:'Vær'},
+  {id:'todo',    label:'Gjøremål'},
+  {id:'habits',  label:'Vaner'},
+  {id:'cd',      label:'Nedtellinger'},
+  {id:'notes',   label:'Notater'},
+  {id:'pomo',    label:'Fokustimer'},
+  {id:'clip',    label:'Utklippstavle'},
+  {id:'spotify', label:'Spotify'},
+];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════════════════════════════ */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = ms => { const s = Math.floor(ms/1000); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
+const todayKey = () => new Date().toISOString().slice(0,10);
+const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+const $ = id => document.getElementById(id);
+
+let toastTimer;
+function showToast(msg, ms=2200) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════════════════════════════════════════ */
+let settings = LS.get('dash_settings', {});
+const getSetting = (k, def) => k in settings ? settings[k] : def;
+const saveSetting = (k, v) => { settings[k] = v; LS.set('dash_settings', settings); };
+
+function applySettings() {
+  // Clock
+  $('s-24h').checked = getSetting('clock24h', true);
+  // Search
+  const showSearch = getSetting('showSearch', true);
+  $('s-search').checked = showSearch;
+  $('search-wrap').style.display = showSearch ? '' : 'none';
+  // Sys info
+  const showSys = getSetting('showSysInfo', true);
+  $('s-sysinfo').checked = showSys;
+  $('sys-chips').style.display = showSys ? '' : 'none';
+  // Sound
+  $('s-sound').checked = getSetting('pomoSound', true);
+  // Accent
+  const acc = getSetting('accent', '#1DB954');
+  document.documentElement.style.setProperty('--accent', acc);
+  document.querySelectorAll('.accent-dot').forEach(d =>
+    d.classList.toggle('active', d.style.background === acc)
+  );
+  // Section visibility
+  SEC_META.forEach(({id}) => {
+    if (getSetting('hide_sec_' + id, false)) {
+      const s = $('sec-' + id);
+      if (s) s.style.display = 'none';
+    }
+  });
+  // Collapsed sections
+  SEC_META.forEach(({id}) => {
+    if (getSetting('sec_' + id, true) === false) {
+      const body = $('body-' + id), chev = $('chev-' + id);
+      if (body) body.classList.add('closed');
+      if (chev) chev.classList.remove('open');
+    }
+  });
+}
+
+function toggleSettings() {
+  const open = $('settings-panel').classList.toggle('open');
+  $('cfg-btn').classList.toggle('active', open);
+  if (open) buildSecVis();
+}
+
+function buildSecVis() {
+  $('sec-vis').innerHTML = SEC_META.map(({id, label}) => `
+    <div class="s-row">
+      <div class="s-label">${label}</div>
+      <label class="toggle-sw">
+        <input type="checkbox" ${!getSetting('hide_sec_'+id, false) ? 'checked' : ''}
+          onchange="toggleSecVis('${id}',this.checked)">
+        <span class="toggle-track"></span>
+      </label>
+    </div>`).join('');
+}
+
+function toggleSecVis(id, show) {
+  saveSetting('hide_sec_' + id, !show);
+  const s = $('sec-' + id); if (s) s.style.display = show ? '' : 'none';
+}
+function toggleSearchBar(show) { saveSetting('showSearch', show); $('search-wrap').style.display = show ? '' : 'none'; }
+function toggleSysInfo(show)   { saveSetting('showSysInfo', show); $('sys-chips').style.display = show ? '' : 'none'; }
+
+function setAccent(color) {
+  saveSetting('accent', color);
+  document.documentElement.style.setProperty('--accent', color);
+  document.querySelectorAll('.accent-dot').forEach(d =>
+    d.classList.toggle('active', d.style.background === color)
+  );
+}
+
+function exportData() {
+  const data = {
+    todos:      LS.get('dash_todos', []),
+    notes:      LS.get('dash_notes', ''),
+    habits:     LS.get('dash_habits', []),
+    countdowns: LS.get('dash_countdowns', []),
+    clipboard:  LS.get('dash_clip', []),
+    settings,
+    exported: new Date().toISOString(),
+  };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], {type:'application/json'}));
+  a.download = `dashboard_backup_${todayKey()}.json`;
+  a.click();
+  showToast('📦 Data eksportert!');
+}
+function confirmReset() {
+  if (confirm('Er du sikker? Sletter alle oppgaver, notater, vaner og innstillinger.')) {
+    localStorage.clear(); location.reload();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ONLINE / OFFLINE
+═══════════════════════════════════════════════════════════════════════════ */
+const checkOnline = () => $('offline-banner').classList.toggle('show', !navigator.onLine);
+window.addEventListener('online',  checkOnline);
+window.addEventListener('offline', checkOnline);
+checkOnline();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CLOCK
+═══════════════════════════════════════════════════════════════════════════ */
+function toggleClockFmt() {
+  saveSetting('clock24h', !getSetting('clock24h', true));
+  $('s-24h').checked = getSetting('clock24h', true);
+  updateClock();
+}
+function updateClock() {
+  const n = new Date(), use24 = getSetting('clock24h', true);
+  let h = n.getHours(), sfx = '';
+  if (!use24) { sfx = h >= 12 ? ' PM' : ' AM'; h = h % 12 || 12; }
+  $('clock').textContent = `${String(h).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}${sfx}`;
+  $('clock-date').textContent = `${DAYS[n.getDay()]} ${n.getDate()} ${MONTHS[n.getMonth()]}`;
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION COLLAPSE
+═══════════════════════════════════════════════════════════════════════════ */
+function toggleSec(id) {
+  const body = $('body-'+id), chev = $('chev-'+id);
+  if (!body) return;
+  const closed = body.classList.toggle('closed');
+  if (chev) chev.classList.toggle('open', !closed);
+  saveSetting('sec_'+id, !closed);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STATUS DOT
+═══════════════════════════════════════════════════════════════════════════ */
+function setDot(on) {
+  const d = $('status-dot');
+  d.style.background = on ? 'var(--accent)' : 'var(--faint)';
+  d.style.boxShadow  = on ? '0 0 8px var(--accent)' : 'none';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SYSTEM INFO
+═══════════════════════════════════════════════════════════════════════════ */
+async function refreshSysInfo() {
+  try {
+    const {cpuPct, memPct} = await api.systemInfo();
+    const cpu = $('chip-cpu'), ram = $('chip-ram');
+    cpu.textContent = `CPU ${cpuPct}%`;
+    cpu.className = 'chip' + (cpuPct > 85 ? ' crit' : cpuPct > 60 ? ' warn' : '');
+    ram.textContent = `RAM ${memPct}%`;
+    ram.className = 'chip' + (memPct > 85 ? ' crit' : memPct > 70 ? ' warn' : '');
+  } catch {}
+  try {
+    if (!navigator.getBattery) return;
+    const bat = await navigator.getBattery();
+    const pct = Math.round(bat.level * 100), el = $('chip-bat');
+    el.style.display = '';
+    el.textContent = `${bat.charging ? '⚡' : '🔋'} ${pct}%`;
+    el.className = 'chip' + (!bat.charging && pct < 20 ? ' crit' : !bat.charging && pct < 40 ? ' warn' : '');
+  } catch {}
+}
+refreshSysInfo();
+setInterval(refreshSysInfo, 15000);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════════════════════════════════════════ */
+let currentSE = 'google';
+function setSE(name) {
+  currentSE = name;
+  document.querySelectorAll('.se-btn').forEach(b => b.classList.remove('active'));
+  $('se-' + name).classList.add('active');
+  $('search-input').placeholder = SE_LABELS[name];
+}
+function doSearch() {
+  const q = $('search-input').value.trim(); if (!q) return;
+  const url = SE_URLS[currentSE] + encodeURIComponent(q);
+  try { api.shortcutLaunch({url}); } catch { /* outside Electron */ }
+  $('search-input').value = '';
+}
+const onSearchKey = e => { if (e.key === 'Enter') doSearch(); };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WEATHER
+═══════════════════════════════════════════════════════════════════════════ */
+const wmo = code => WMO_MAP[code] ?? WMO_MAP[Math.floor(code/10)*10] ?? {e:'🌡',d:'Ukjent'};
+let wxLast = null, acResults = [], acTimer;
+
+async function detectLocation() {
+  const el = $('wx-content');
+  if (!navigator.onLine) { el.innerHTML = '<div class="wx-err">Ingen internettforbindelse</div>'; return; }
+  el.innerHTML = '<div class="loading"><span class="spin">⊙</span> Finner posisjon…</div>';
+  try {
+    const pos = await new Promise((res, rej) =>
+      navigator.geolocation.getCurrentPosition(res, rej, {timeout:8000}));
+    await loadWx(pos.coords.latitude, pos.coords.longitude, 'Min posisjon');
+  } catch { el.innerHTML = '<div class="wx-err">Kunne ikke hente posisjon.<br>Prøv å søke manuelt.</div>'; }
+}
+
+async function doWxSearch() {
+  const q = $('wx-input').value.trim(); if (!q) return;
+  hideAC();
+  if (!navigator.onLine) { $('wx-content').innerHTML = '<div class="wx-err">Ingen internettforbindelse</div>'; return; }
+  $('wx-content').innerHTML = '<div class="loading"><span class="spin">⊙</span> Søker…</div>';
+  try {
+    const results = await api.weatherGeocode(q);
+    if (!results?.length) { $('wx-content').innerHTML = `<div class="wx-err">Fant ingen steder for "${esc(q)}"</div>`; return; }
+    const r = results[0];
+    await loadWx(r.latitude, r.longitude, [r.name, r.admin1, r.country].filter(Boolean).join(', '));
+  } catch { $('wx-content').innerHTML = '<div class="wx-err">Søk feilet. Prøv igjen.</div>'; }
+}
+
+async function loadWx(lat, lon, name) {
+  $('wx-content').innerHTML = '<div class="loading"><span class="spin">⊙</span> Henter vær…</div>';
+  try {
+    const data = await api.weatherByCoords({lat, lon});
+    if (!data || data.error) throw new Error();
+    wxLast = {lat, lon, name};
+    renderWx(data, name);
+  } catch { $('wx-content').innerHTML = '<div class="wx-err">Kunne ikke hente værdata</div>'; }
+}
+
+function renderWx(data, name) {
+  const c = data.current, d = data.daily, w = wmo(c.weather_code);
+  const uv = c.uv_index ?? c.uv_index_instant ?? null;
+  const uvHtml = uv !== null ? (() => {
+    const pct = clamp(uv/11*100, 0, 100);
+    const lbl = uv<=2?'Lav':uv<=5?'Moderat':uv<=7?'Høy':uv<=10?'Svært høy':'Ekstrem';
+    return `<div class="wx-stat"><div class="wx-stat-lbl">UV-indeks</div>
+      <div class="wx-stat-val">${uv.toFixed(1)} <span class="wx-stat-unit">${lbl}</span></div>
+      <div class="uv-bar"><div class="uv-dot" style="margin-left:calc(${pct}% - 3px)"></div></div></div>`;
+  })() : '';
+
+  const fcHtml = (d.time ?? []).slice(0,7).map((t, i) => {
+    const fw = wmo(d.weather_code[i]), dn = new Date(t);
+    const lbl = i===0?'I dag':i===1?'I morgen':WDAYS[dn.getDay()];
+    const rain = (d.precipitation_sum?.[i] ?? 0) > 0.1
+      ? `<div class="fc-rain">💧${d.precipitation_sum[i].toFixed(1)}</div>`
+      : `<div class="fc-rain" style="color:var(--faint)">—</div>`;
+    return `<div class="fc-day${i===0?' today':''}">
+      <div class="fc-lbl">${lbl}</div><div class="fc-icon">${fw.e}</div>
+      <div class="fc-hi">${Math.round(d.temperature_2m_max[i])}°</div>
+      <div class="fc-lo">${Math.round(d.temperature_2m_min[i])}°</div>${rain}</div>`;
+  }).join('');
+
+  let sunHtml = '';
+  if (d.sunrise?.[0] && d.sunset?.[0]) {
+    const sr = new Date(d.sunrise[0]), ss = new Date(d.sunset[0]);
+    const tf = dt => `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    sunHtml = `<div class="sun-row">
+      <div class="sun-item">🌅<div><div class="sun-lbl">Soloppgang</div><div class="sun-val">${tf(sr)}</div></div></div>
+      <div class="sun-item">🌇<div><div class="sun-lbl">Solnedgang</div><div class="sun-val">${tf(ss)}</div></div></div>
+    </div>`;
+  }
+
+  const now = new Date();
+  const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  $('wx-content').innerHTML = `
+    <div class="wx-now">
+      <div class="wx-icon">${w.e}</div>
+      <div>
+        <div class="wx-temp">${Math.round(c.temperature_2m)}°<span style="font-size:15px;color:var(--faint)">C</span></div>
+        <div class="wx-desc">${w.d}</div>
+        <div class="wx-feels">Føles som ${Math.round(c.apparent_temperature)}°C</div>
+        <div class="wx-loc">📍 ${esc(name)}</div>
+      </div>
+    </div>
+    <div class="wx-stats">
+      <div class="wx-stat"><div class="wx-stat-lbl">Fuktighet</div><div class="wx-stat-val">${c.relative_humidity_2m}<span class="wx-stat-unit">%</span></div></div>
+      <div class="wx-stat"><div class="wx-stat-lbl">Vind</div><div class="wx-stat-val">${Math.round(c.wind_speed_10m)}<span class="wx-stat-unit"> km/t</span></div></div>
+      <div class="wx-stat"><div class="wx-stat-lbl">Vindkast</div><div class="wx-stat-val">${Math.round(c.wind_gusts_10m ?? c.wind_speed_10m)}<span class="wx-stat-unit"> km/t</span></div></div>
+      <div class="wx-stat"><div class="wx-stat-lbl">Nedbør</div><div class="wx-stat-val">${c.precipitation}<span class="wx-stat-unit"> mm</span></div></div>
+      ${uvHtml}
+    </div>
+    <div class="fc-row">${fcHtml}</div>
+    ${sunHtml}
+    <div class="wx-footer">Oppdatert ${ts} · <span style="cursor:pointer;color:var(--blue)" onclick="refreshWx()">Oppdater</span></div>`;
+}
+
+const refreshWx = () => { if (wxLast && navigator.onLine) loadWx(wxLast.lat, wxLast.lon, wxLast.name); };
+setInterval(refreshWx, 30 * 60 * 1000);
+
+const onWxInput = val => {
+  clearTimeout(acTimer);
+  if (!val.trim()) { hideAC(); return; }
+  acTimer = setTimeout(async () => {
+    try { acResults = await api.weatherGeocode(val) ?? []; showAC(acResults); } catch {}
+  }, 380);
+};
+function showAC(results) {
+  const box = $('ac-box');
+  if (!results.length) { hideAC(); return; }
+  box.innerHTML = results.slice(0,5).map((r,i) =>
+    `<div class="ac-item" onclick="selectAC(${i})"><strong>${esc(r.name)}</strong><small>${esc([r.admin1,r.country].filter(Boolean).join(', '))}</small></div>`
+  ).join('');
+  box.style.display = 'block';
+}
+const hideAC = () => $('ac-box').style.display = 'none';
+async function selectAC(i) {
+  const r = acResults[i]; if (!r) return;
+  $('wx-input').value = r.name; hideAC();
+  await loadWx(r.latitude, r.longitude, [r.name, r.admin1, r.country].filter(Boolean).join(', '));
+}
+const onWxKey = e => { if (e.key==='Enter') { hideAC(); doWxSearch(); } if (e.key==='Escape') hideAC(); };
+document.addEventListener('click', e => { if (!e.target.closest('.wx-search')) hideAC(); });
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TO-DO
+═══════════════════════════════════════════════════════════════════════════ */
+let todos = [], todoFilter = 'all';
+const PRIO_CLASS = {h:'ph', m:'pm', l:'pl'};
+
+async function loadTodos() {
+  try { todos = await api.todosGet() ?? []; } catch { todos = LS.get('dash_todos', []); }
+  renderTodos();
+}
+async function saveTodos() {
+  try { await api.todosSave(todos); } catch { LS.set('dash_todos', todos); }
+}
+
+const setFilter = f => {
+  todoFilter = f;
+  document.querySelectorAll('.flt').forEach(b => b.classList.remove('active'));
+  $('flt-' + f).classList.add('active');
+  renderTodos();
+};
+
+function renderTodos() {
+  const done  = todos.filter(t => t.done).length;
+  const total = todos.length;
+  $('todo-fill').style.width  = total ? `${Math.round(done/total*100)}%` : '0%';
+  $('todo-count').textContent = total ? `${total-done} igjen av ${total}` : '';
+  $('todo-badge').textContent = total ? `${total-done}/${total}` : '';
+  $('clear-done-btn').style.display = done ? '' : 'none';
+
+  const filtered = todos.filter(t => {
+    if (todoFilter === 'active') return !t.done;
+    if (todoFilter === 'done')   return  t.done;
+    if (todoFilter === 'h')      return  t.priority === 'h';
+    return true;
+  });
+
+  if (!filtered.length) { $('todo-list').innerHTML = '<div class="todo-empty">Ingen oppgaver her 🎯</div>'; return; }
+  const now = Date.now();
+  $('todo-list').innerHTML = filtered.map(t => {
+    const idx = todos.indexOf(t);
+    let dueHtml = '';
+    if (t.due) {
+      const ms = new Date(t.due).getTime() - now;
+      const ov = !t.done && ms < 0;
+      dueHtml = `<span class="todo-due${ov?' ov':''}">${ov?'⚠ ':''}${new Date(t.due).toLocaleDateString('no',{day:'numeric',month:'short'})}</span>`;
+    }
+    return `<div class="todo-item${t.done?' done':''}${t.priority?' '+PRIO_CLASS[t.priority]:''}">
+      <div class="todo-check${t.done?' on':''}" onclick="toggleTodo(${idx})">${t.done?'✓':''}</div>
+      <span class="todo-text" title="${esc(t.text)}">${esc(t.text)}</span>
+      ${dueHtml}
+      <button class="todo-del" onclick="deleteTodo(${idx})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+const onTodoKey = e => { if (e.key === 'Enter') addTodo(); };
+async function addTodo() {
+  const inp = $('todo-input'), text = inp.value.trim(); if (!text) return;
+  todos.unshift({text, done:false, id:Date.now(),
+    priority: $('todo-prio').value || null,
+    due:      $('todo-due').value  || null,
+  });
+  inp.value = ''; $('todo-prio').value = ''; $('todo-due').value = '';
+  await saveTodos(); renderTodos();
+}
+async function toggleTodo(i) { todos[i].done = !todos[i].done; await saveTodos(); renderTodos(); }
+async function deleteTodo(i) { todos.splice(i,1); await saveTodos(); renderTodos(); }
+async function clearDone()   { todos = todos.filter(t => !t.done); await saveTodos(); renderTodos(); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HABITS
+═══════════════════════════════════════════════════════════════════════════ */
+let habits = [];
+const loadHabits = () => { habits = LS.get('dash_habits', []); renderHabits(); };
+const saveHabits = () => LS.set('dash_habits', habits);
+
+function weekKeys() {
+  return Array.from({length:7}, (_,i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6-i));
+    return d.toISOString().slice(0,10);
+  });
+}
+function calcStreak(dates) {
+  let streak = 0, d = new Date();
+  while (true) {
+    if (dates.includes(d.toISOString().slice(0,10))) streak++;
+    else if (streak > 0) break;
+    else if (d.toDateString() !== new Date().toDateString()) break;
+    d.setDate(d.getDate()-1);
+    if (streak === 0 && d.toDateString() !== new Date().toDateString()) break;
+  }
+  return streak;
+}
+
+function renderHabits() {
+  const today = todayKey(), week = weekKeys();
+  const doneCnt = habits.filter(h => (h.dates??[]).includes(today)).length;
+  $('habits-badge').textContent = habits.length ? `${doneCnt}/${habits.length} i dag` : '';
+  if (!habits.length) { $('habits-list').innerHTML = '<div class="habits-empty">Ingen vaner ennå — legg til en! 🌱</div>'; return; }
+  $('habits-list').innerHTML = habits.map((h,i) => {
+    const dates = h.dates ?? [];
+    const streak = calcStreak(dates);
+    const days = week.map((day,wi) => {
+      const dn = new Date(day);
+      const isToday = day === today, done = dates.includes(day);
+      return `<div class="hday${done?' done':''}${isToday?' today':''}" onclick="toggleHabit(${i},'${day}')" title="${WDAYS[dn.getDay()]}">${done?'✓':''}</div>`;
+    }).join('');
+    return `<div class="habit-item">
+      <span class="habit-name">${esc(h.name)}</span>
+      <span class="habit-streak">🔥${streak}</span>
+      <div class="habit-days">${days}</div>
+      <button class="habit-del" onclick="deleteHabit(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addHabit() {
+  const inp = $('habit-input'), name = inp.value.trim(); if (!name) return;
+  habits.push({name, dates:[], id:Date.now()});
+  inp.value = ''; saveHabits(); renderHabits();
+}
+function toggleHabit(i, day) {
+  const dates = habits[i].dates ?? (habits[i].dates = []);
+  const idx = dates.indexOf(day);
+  idx >= 0 ? dates.splice(idx,1) : dates.push(day);
+  saveHabits(); renderHabits();
+}
+function deleteHabit(i) { habits.splice(i,1); saveHabits(); renderHabits(); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COUNTDOWNS
+═══════════════════════════════════════════════════════════════════════════ */
+let countdowns = [];
+const loadCountdowns = () => { countdowns = LS.get('dash_countdowns', []); renderCountdowns(); };
+const saveCountdowns = () => LS.set('dash_countdowns', countdowns);
+
+function renderCountdowns() {
+  if (!countdowns.length) { $('cd-list').innerHTML = '<div class="cd-empty">Ingen nedtellinger — legg til en! ⏳</div>'; return; }
+  const now = Date.now();
+  $('cd-list').innerHTML = countdowns.map((cd,i) => {
+    const ms = cd.ts - now, past = ms < 0, abs = Math.abs(ms);
+    const d = Math.floor(abs/86400000), h = Math.floor((abs%86400000)/3600000), m = Math.floor((abs%3600000)/60000);
+    const str = past ? 'Passert' : d > 0 ? `${d}d ${h}t` : h > 0 ? `${h}t ${m}m` : `${m}m`;
+    return `<div class="cd-item">
+      <span class="cd-name">${esc(cd.name)}</span>
+      <span class="cd-time${past?' past':ms<86400000*3?' soon':''}">${str}</span>
+      <button class="cd-del" onclick="deleteCountdown(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+function addCountdown() {
+  const name = $('cd-name').value.trim(), date = $('cd-date').value;
+  if (!name || !date) { showToast('Fyll inn navn og dato'); return; }
+  countdowns.push({name, ts: new Date(date).getTime(), id:Date.now()});
+  $('cd-name').value = ''; $('cd-date').value = '';
+  saveCountdowns(); renderCountdowns();
+}
+function deleteCountdown(i) { countdowns.splice(i,1); saveCountdowns(); renderCountdowns(); }
+setInterval(renderCountdowns, 60000);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NOTES
+═══════════════════════════════════════════════════════════════════════════ */
+let notesSaveTimer;
+async function loadNotes() {
+  try { $('notes-area').value = await api.notesGet() ?? ''; }
+  catch { $('notes-area').value = LS.get('dash_notes', ''); }
+  updateNotesInfo();
+}
+async function saveNotes(text) {
+  try { await api.notesSave(text); } catch { LS.set('dash_notes', text); }
+}
+function updateNotesInfo() {
+  const text = $('notes-area').value;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  $('notes-info').textContent = `${text.length} tegn · ${words} ord`;
+}
+function onNotesInput() {
+  updateNotesInfo();
+  $('notes-saved').style.opacity = '0';
+  clearTimeout(notesSaveTimer);
+  notesSaveTimer = setTimeout(async () => {
+    await saveNotes($('notes-area').value);
+    $('notes-saved').style.opacity = '1';
+    setTimeout(() => $('notes-saved').style.opacity = '0', 2000);
+  }, 600);
+}
+function fmtNote(type) {
+  const a = $('notes-area'), s = a.selectionStart, e = a.selectionEnd, v = a.value;
+  let nv = v, ns = s, ne = e;
+  if (type === 'bold')   { const sel = v.slice(s,e)||'fet tekst'; nv = v.slice(0,s)+'**'+sel+'**'+v.slice(e); ns=s+2; ne=ns+sel.length; }
+  if (type === 'italic') { const sel = v.slice(s,e)||'kursiv';    nv = v.slice(0,s)+'_'+sel+'_'+v.slice(e);   ns=s+1; ne=ns+sel.length; }
+  if (type === 'bullet') { const ls = v.lastIndexOf('\n',s-1)+1;  nv = v.slice(0,ls)+'• '+v.slice(ls);        ns=s+2; ne=e+2; }
+  a.value = nv; a.setSelectionRange(ns,ne); a.focus(); onNotesInput();
+}
+function clearNotes() {
+  if (!$('notes-area').value.trim() || !confirm('Tøm alle notater?')) return;
+  $('notes-area').value = ''; onNotesInput();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   POMODORO
+═══════════════════════════════════════════════════════════════════════════ */
+const pomo = {
+  running:false, phase:'focus', secsLeft:25*60,
+  session:1, done:0, focusMins:25, breakMins:5, totalSess:4, iv:null,
+};
+
+function pomoGetToday() {
+  const s = LS.get('dash_pomo_day', {d:'',m:0});
+  return s.d === new Date().toDateString() ? s.m : 0;
+}
+function pomoAddMins(m) {
+  const d = new Date().toDateString();
+  const s = LS.get('dash_pomo_day', {d,m:0});
+  LS.set('dash_pomo_day', {d, m:(s.d===d?s.m:0)+m});
+  $('pomo-today').textContent = pomoGetToday();
+}
+function pomoBeep() {
+  if (!getSetting('pomoSound', true)) return;
+  try {
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.setValueAtTime(880, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(440, ctx.currentTime+.3);
+    g.gain.setValueAtTime(.3, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.5);
+    o.start(); o.stop(ctx.currentTime+.5);
+  } catch {}
+}
+function pomoCfgChange() {
+  if (pomo.running) return;
+  pomo.focusMins  = clamp(parseInt($('cfg-focus').value)||25, 1, 90);
+  pomo.breakMins  = clamp(parseInt($('cfg-break').value)||5,  1, 30);
+  pomo.totalSess  = clamp(parseInt($('cfg-sess').value) ||4,  1, 12);
+  pomo.phase='focus'; pomo.secsLeft=pomo.focusMins*60; pomo.session=1; pomo.done=0;
+  pomoRender();
+}
+function pomoToggle() {
+  if (pomo.running) {
+    clearInterval(pomo.iv); pomo.running=false; $('pomo-start').textContent='Fortsett';
+  } else {
+    pomo.running=true; $('pomo-start').textContent='Pause';
+    pomo.iv = setInterval(pomoTick, 1000);
+  }
+  pomoRender();
+}
+function pomoReset() {
+  clearInterval(pomo.iv); pomo.running=false; pomo.phase='focus';
+  pomo.session=1; pomo.done=0; pomo.secsLeft=pomo.focusMins*60;
+  $('pomo-start').textContent='Start'; pomoRender();
+}
+function pomoSkip() {
+  clearInterval(pomo.iv); pomo.running=false;
+  if (pomo.phase==='focus') {
+    pomoAddMins(pomo.focusMins - Math.floor(pomo.secsLeft/60));
+    pomo.done++; pomo.phase='break'; pomo.secsLeft=pomo.breakMins*60;
+  } else {
+    pomo.phase='focus'; pomo.session++; pomo.secsLeft=pomo.focusMins*60;
+  }
+  $('pomo-start').textContent='Start'; pomoRender();
+}
+function pomoTick() {
+  pomo.secsLeft--;
+  if (pomo.secsLeft > 0) { pomoRender(); return; }
+  pomoBeep();
+  if (pomo.phase==='focus') {
+    pomoAddMins(pomo.focusMins); pomo.done++;
+    if (pomo.done >= pomo.totalSess) {
+      clearInterval(pomo.iv); pomo.running=false; pomo.phase='done';
+      try { api.notify({title:'🎉 Alle fokusøkter fullført!', body:'Bra jobbet!'}); } catch {}
+      $('pomo-start').textContent='Start'; pomoRender(); return;
+    }
+    pomo.phase='break'; pomo.secsLeft=pomo.breakMins*60;
+    try { api.notify({title:'☕ Pausetid!', body:`${pomo.breakMins} min pause.`}); } catch {}
+  } else {
+    pomo.phase='focus'; pomo.session++; pomo.secsLeft=pomo.focusMins*60;
+    try { api.notify({title:'🎯 Fokustid!', body:`Økt ${pomo.session} av ${pomo.totalSess}.`}); } catch {}
+  }
+  pomoRender();
+}
+function pomoRender() {
+  const {secsLeft,phase,session,done,focusMins,breakMins,totalSess,running} = pomo;
+  const m = Math.floor(secsLeft/60), s = secsLeft%60;
+  $('pomo-digits').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  $('pomo-phase').textContent  = {focus:'Fokus',break:'Pause',done:'Ferdig ✓'}[phase]??'Fokus';
+  const total = phase==='break' ? breakMins*60 : focusMins*60;
+  const C = 2*Math.PI*44;
+  $('pomo-ring').style.strokeDashoffset = C*(1-secsLeft/total);
+  $('pomo-ring').style.stroke = phase==='break'?'var(--blue)':phase==='done'?'var(--green)':'var(--red)';
+  $('pomo-sess').textContent  = `Økt ${Math.min(session,totalSess)} av ${totalSess}`;
+  $('pomo-dots').innerHTML    = Array.from({length:totalSess},(_,i)=>
+    `<div class="pomo-dot${i<done?' done':i===done&&running&&phase==='focus'?' active':''}"></div>`
+  ).join('');
+  $('pomo-hdr').textContent   = running ? (phase==='break'?'Pause':'Fokus') : '';
+  $('pomo-today').textContent = pomoGetToday();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CLIPBOARD
+═══════════════════════════════════════════════════════════════════════════ */
+let clips = [];
+const loadClipboard  = () => { clips = LS.get('dash_clip', []); renderClips(); };
+const saveClipboard  = () => LS.set('dash_clip', clips);
+const timeAgo = ts => { const m=Math.floor((Date.now()-ts)/60000); return m<1?'nå':m<60?m+'m':m<1440?Math.floor(m/60)+'t':Math.floor(m/1440)+'d'; };
+
+function renderClips() {
+  if (!clips.length) { $('clip-list').innerHTML = '<div class="clip-empty">Utklippstavlen er tom 📋</div>'; return; }
+  $('clip-list').innerHTML = clips.map((c,i) =>
+    `<div class="clip-item" id="cl-${i}" onclick="copyClip(${i})" title="Klikk for å kopiere">
+      <span class="clip-text">${esc(c.text)}</span>
+      <span class="clip-time">${timeAgo(c.ts)}</span>
+      <span class="clip-ic">📋</span>
+    </div>`
+  ).join('');
+}
+function addClip() {
+  const inp = $('clip-input'), text = inp.value.trim(); if (!text) return;
+  clips.unshift({text, ts:Date.now()});
+  if (clips.length > 20) clips.pop();
+  inp.value = ''; saveClipboard(); renderClips();
+}
+async function copyClip(i) {
+  try { await navigator.clipboard.writeText(clips[i].text); } catch {}
+  const el = $('cl-'+i);
+  if (el) { el.classList.add('copied'); setTimeout(()=>el.classList.remove('copied'),1200); }
+  showToast('📋 Kopiert!');
+}
+function clearClipboard() { if (!clips.length) return; clips=[]; saveClipboard(); renderClips(); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHORTCUTS
+═══════════════════════════════════════════════════════════════════════════ */
+let shortcuts = [], selEmoji = EMOJIS[0];
+
+async function loadShortcuts() {
+  try { shortcuts = await api.shortcutsGet() ?? []; } catch { shortcuts = LS.get('dash_shortcuts', []); }
+  renderShortcuts();
+}
+async function saveShortcuts() {
+  try { await api.shortcutsSave(shortcuts); } catch { LS.set('dash_shortcuts', shortcuts); }
+}
+function renderShortcuts() {
+  document.querySelectorAll('.app-tile.custom').forEach(el => el.remove());
+  const addTile = $('add-tile');
+  shortcuts.forEach((sc, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'app-tile custom';
+    tile.innerHTML = `<div class="app-emoji">${sc.emoji||'🌐'}</div><div class="app-label">${esc(sc.name)}</div>
+      <button class="del-btn" onclick="event.stopPropagation();delShortcut(${i})">✕</button>`;
+    tile.onclick = () => { try { api.shortcutLaunch(sc); } catch { if (sc.url) window.open(sc.url,'_blank'); } };
+    addTile.parentNode.insertBefore(tile, addTile);
+  });
+}
+function openAddModal() {
+  selEmoji = EMOJIS[0];
+  $('sc-name').value = ''; $('sc-path').value = '';
+  $('emoji-grid').innerHTML = EMOJIS.map((em,i) =>
+    `<div class="emo${i===0?' sel':''}" onclick="pickEmoji('${em}',${i})">${em}</div>`
+  ).join('');
+  $('modal').style.display = 'flex';
+  setTimeout(() => $('sc-name').focus(), 100);
+}
+function pickEmoji(em, i) {
+  selEmoji = em;
+  document.querySelectorAll('.emo').forEach((el,j) => el.classList.toggle('sel', j===i));
+}
+async function saveShortcut() {
+  const name = $('sc-name').value.trim(), path = $('sc-path').value.trim();
+  if (!name) { $('sc-name').focus(); return; }
+  if (!path) { $('sc-path').focus(); return; }
+  const isUrl = path.startsWith('http')||path.startsWith('www.');
+  const sc = {name, emoji:selEmoji, ...(isUrl ? {url: path.startsWith('www.')?'https://'+path:path} : {path})};
+  shortcuts.push(sc); await saveShortcuts(); renderShortcuts(); closeModal();
+  showToast('✅ Snarvei lagt til');
+}
+async function delShortcut(i) { shortcuts.splice(i,1); await saveShortcuts(); renderShortcuts(); }
+const closeModal = () => $('modal').style.display = 'none';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPOTIFY
+═══════════════════════════════════════════════════════════════════════════ */
+// State kept flat and minimal — only what the render needs
+const sp = {
+  authed:false, playing:false, prog:0, dur:1, vol:70,
+  shuffle:false, repeat:'off',       // real values from Spotify API
+  progIv:null, pollIv:null,
+  showPl:false, plCache:null,
+  lastMuteVol:70, muted:false,
+};
+
+const setAuthUI = a => {
+  $('sp-login-btn').style.display  = a ? 'none' : '';
+  $('sp-logout-btn').style.display = a ? ''     : 'none';
+};
+const volIcon = v => v===0?'🔇':v<40?'🔈':v<75?'🔉':'🔊';
+const fmtMs   = ms => { const s=Math.floor(ms/1000); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
+
+async function doSpotifyLogin()  { try { await api.login();  } catch {} }
+async function doSpotifyLogout() {
+  sp.playing=false; sp.authed=false;
+  clearInterval(sp.pollIv); sp.pollIv=null; stopProgTimer();
+  try { await api.logout(); } catch {}
+  setAuthUI(false); setDot(false);
+  $('sp-content').innerHTML = '<div class="sp-empty">Logg inn for å se musikk</div>';
+}
+
+try {
+  api.onSpotifyAuthed(async () => {
+    sp.authed=true; setAuthUI(true); setDot(true);
+    await loadPlayback(); startPoll();
+  });
+} catch {}
+
+const startPoll = () => { if (!sp.pollIv) sp.pollIv = setInterval(loadPlayback, 5000); };
+const stopProgTimer = () => { clearInterval(sp.progIv); sp.progIv=null; };
+
+function startProgTimer() {
+  stopProgTimer(); if (!sp.playing) return;
+  sp.progIv = setInterval(() => {
+    sp.prog = Math.min(sp.prog+500, sp.dur);
+    if (sp.prog >= sp.dur) { stopProgTimer(); setTimeout(loadPlayback,500); return; }
+    const pct = Math.round(sp.prog/sp.dur*100);
+    const f=$('prog-fill'), c=$('prog-cur');
+    if (f) f.style.width = pct+'%';
+    if (c) c.textContent = fmtMs(sp.prog);
+  }, 500);
+}
+
+async function loadPlayback() {
+  try {
+    const data = await api.getPlayback();
+    const el = $('sp-content'); if (!el) return;
+
+    if (data?.offline) { el.innerHTML='<div class="sp-empty">⚠️ Ingen internettforbindelse</div>'; stopProgTimer(); return; }
+
+    if (!data || data.nothing_playing) {
+      el.innerHTML = `<div class="sp-empty"><div style="font-size:20px;margin-bottom:8px">🎵</div>Ingen musikk spilles nå</div>
+        <div class="pl-toggle-row"><button class="btn ghost" onclick="togglePl()">&#9776; Velg playlist</button></div>
+        <div id="pl-container"></div>`;
+      stopProgTimer(); if (sp.showPl) renderPl(); return;
+    }
+
+    const {item:track, is_playing, progress_ms, shuffle_state, repeat_state, device} = data;
+    sp.playing  = is_playing;
+    sp.prog     = progress_ms;
+    sp.dur      = track.duration_ms;
+    sp.vol      = device?.volume_percent ?? sp.vol;
+    sp.shuffle  = shuffle_state ?? sp.shuffle;
+    sp.repeat   = repeat_state  ?? sp.repeat;
+
+    const art     = track.album?.images?.[0]?.url;
+    const artists = track.artists.map(a => a.name).join(', ');
+    const pct     = Math.round(sp.prog/sp.dur*100);
+    const nextRepeat = sp.repeat==='off'?'context':sp.repeat==='context'?'track':'off';
+
+    el.innerHTML = `
+      <div class="music-top">
+        ${art ? `<img class="album-art" src="${esc(art)}" alt=""/>` : `<div class="album-art-ph">🎵</div>`}
+        <div class="track-info">
+          <div class="track-name">${esc(track.name)}</div>
+          <div class="track-artist">${esc(artists)}</div>
+          <div class="badge ${sp.playing?'':'paused'}">
+            <span class="bars"><span></span><span></span><span></span></span>
+            ${sp.playing?'SPILLES':'PAUSE'}
+          </div>
+        </div>
+      </div>
+      <div class="sp-controls">
+        <button class="ctrl${sp.shuffle?' lit':''}" onclick="doShuffle()" title="Tilfeldig (${sp.shuffle?'på':'av'})">⇌</button>
+        <button class="ctrl" onclick="doPrev()">&#9664;&#9664;</button>
+        <button class="ctrl play" id="play-btn" onclick="doPlayPause()">${sp.playing?'&#9646;&#9646;':'&#9654;'}</button>
+        <button class="ctrl" onclick="doNext()">&#9654;&#9654;</button>
+        <button class="ctrl${sp.repeat!=='off'?' lit':''}" onclick="doRepeat('${nextRepeat}')"
+          title="Gjenta: ${sp.repeat==='off'?'av':sp.repeat==='context'?'playlist':'sang'}">${sp.repeat==='track'?'🔂':'⟳'}</button>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-bar" id="prog-bar" onclick="seekTo(event)">
+          <div class="prog-fill" id="prog-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="prog-times"><span id="prog-cur">${fmtMs(sp.prog)}</span><span>${fmtMs(sp.dur)}</span></div>
+      </div>
+      <div class="vol-row">
+        <span class="vol-ic" id="vol-ic" onclick="toggleMute()">${volIcon(sp.vol)}</span>
+        <input type="range" min="0" max="100" value="${sp.vol}" id="vol-sl"
+          oninput="onVolIn(this.value)" onchange="onVolCh(this.value)"/>
+        <span class="vol-pct" id="vol-pct">${sp.vol}%</span>
+      </div>
+      <div class="pl-toggle-row">
+        <button class="btn ghost" id="pl-btn" onclick="togglePl()">&#9776; ${sp.showPl?'Skjul playlister':'Velg playlist'}</button>
+      </div>
+      <div id="pl-container"></div>`;
+
+    startProgTimer();
+    if (sp.showPl) renderPl();
+  } catch {}
+}
+
+/* Playback actions */
+let volChTimer;
+function onVolIn(val) {
+  sp.vol = parseInt(val); sp.muted = sp.vol===0;
+  const p=$('vol-pct'),ic=$('vol-ic');
+  if(p)p.textContent=sp.vol+'%'; if(ic)ic.textContent=volIcon(sp.vol);
+}
+function onVolCh(val) {
+  clearTimeout(volChTimer);
+  volChTimer = setTimeout(() => { try{api.setVolume(parseInt(val));}catch{} }, 250);
+}
+function toggleMute() {
+  const sl=$('vol-sl'); if(!sl)return;
+  if (sp.muted) { sp.vol=sp.lastMuteVol||50; sp.muted=false; }
+  else          { sp.lastMuteVol=sp.vol; sp.vol=0; sp.muted=true; }
+  sl.value=sp.vol; onVolIn(sp.vol);
+  clearTimeout(volChTimer);
+  volChTimer=setTimeout(()=>{try{api.setVolume(sp.vol);}catch{}},250);
+}
+function seekTo(e) {
+  const bar=$('prog-bar'); if(!bar)return;
+  const r=bar.getBoundingClientRect();
+  const pct=clamp((e.clientX-r.left)/r.width, 0, 1);
+  sp.prog=Math.round(pct*sp.dur);
+  const f=$('prog-fill'),c=$('prog-cur');
+  if(f)f.style.width=Math.round(pct*100)+'%'; if(c)c.textContent=fmtMs(sp.prog);
+  try{api.seek(sp.prog);}catch{}
+}
+async function doPlayPause() {
+  try{await api.playPause(sp.playing);}catch{}
+  sp.playing=!sp.playing;
+  const btn=$('play-btn'),b=document.querySelector('.badge');
+  if(btn)btn.innerHTML=sp.playing?'&#9646;&#9646;':'&#9654;';
+  if(b){b.classList.toggle('paused',!sp.playing);b.innerHTML=`<span class="bars"><span></span><span></span><span></span></span>${sp.playing?'SPILLES':'PAUSE'}`;}
+  sp.playing?startProgTimer():stopProgTimer();
+}
+async function doNext() { try{await api.next();}catch{}  stopProgTimer(); setTimeout(loadPlayback,600); }
+async function doPrev() { try{await api.prev();}catch{}  stopProgTimer(); setTimeout(loadPlayback,600); }
+
+// shuffle: toggle the current state
+async function doShuffle() {
+  const newState = !sp.shuffle;
+  try { await api.shuffle(newState); sp.shuffle=newState; } catch {}
+  // Update button immediately, full refresh in background
+  const btn = document.querySelector('.ctrl:first-child');
+  if (btn) btn.classList.toggle('lit', sp.shuffle);
+  setTimeout(loadPlayback, 400);
+}
+
+// repeat: cycle off → context → track → off
+async function doRepeat(nextMode) {
+  try { await api.repeat(nextMode); sp.repeat=nextMode; } catch {}
+  setTimeout(loadPlayback, 400);
+}
+
+/* Playlists */
+function togglePl() {
+  sp.showPl = !sp.showPl;
+  const btn=$('pl-btn');
+  if(btn) btn.innerHTML='&#9776; '+(sp.showPl?'Skjul playlister':'Velg playlist');
+  const c=$('pl-container');
+  if(sp.showPl) renderPl(); else if(c) c.innerHTML='';
+}
+async function renderPl() {
+  const c=$('pl-container'); if(!c)return;
+  c.innerHTML='<div class="pl-section"><div class="pl-title-row"><span class="pl-title">Mine playlister</span></div><div class="loading"><span class="spin">⊙</span> Laster…</div></div>';
+  try {
+    if(!sp.plCache){const d=await api.getPlaylists(); sp.plCache=d?.items??[];}
+    if(!sp.plCache.length){c.innerHTML='<div class="pl-section"><div class="sp-empty">Ingen playlister</div></div>';return;}
+    const items=sp.plCache.map(pl=>{
+      const img=pl.images?.[0]?.url;
+      return`<div class="pl-item" onclick="playPl('${esc(pl.uri)}')">
+        ${img?`<img class="pl-thumb" src="${esc(img)}" alt=""/>`:`<div class="pl-thumb-ph">🎵</div>`}
+        <span class="pl-name">${esc(pl.name)}</span>
+        <span class="pl-count">${pl.tracks?.total??'?'}</span>
+        <button class="pl-play">&#9654;</button>
+      </div>`;
+    }).join('');
+    c.innerHTML=`<div class="pl-section"><div class="pl-title-row"><span class="pl-title">Mine playlister</span></div><div class="pl-list">${items}</div></div>`;
+  } catch {}
+}
+async function playPl(uri) {
+  try {
+    const result=await api.playContext(uri);
+    if(result?.ok){sp.showPl=false;stopProgTimer();setTimeout(loadPlayback,800);return;}
+    let msg='';
+    if(result?.error==='premium_required')msg='<strong>⚠️ Krever Spotify Premium</strong>API-avspilling krever Premium.';
+    else if(result?.error==='no_device')msg='<strong>📱 Ingen aktiv enhet</strong>Åpne Spotify og prøv igjen.';
+    else msg='<strong>⚠️ Feil</strong>Sjekk at Spotify er åpent.';
+    const w=document.createElement('div');w.className='dev-warn';w.innerHTML=msg;
+    const c=$('pl-container');c?.querySelector('.dev-warn')?.remove();if(c)c.prepend(w);
+    setTimeout(()=>w.remove(),7000);
+  } catch {}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════════════════ */
+async function init() {
+  applySettings();
+  loadShortcuts();
+  loadHabits();
+  loadCountdowns();
+  loadClipboard();
+  pomoRender();
+
+  await Promise.all([
+    loadTodos().catch(() => {}),
+    loadNotes().catch(() => {}),
+  ]);
+
+  try {
+    const authed = await api.isAuthed();
+    sp.authed = authed; setAuthUI(authed); setDot(authed);
+    if (authed) { await loadPlayback(); startPoll(); }
+  } catch { setAuthUI(false); }
+}
+
+init();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUTO-UPDATER
+═══════════════════════════════════════════════════════════════════════════ */
+try {
+  api.onUpdateStatus(({ status, version }) => {
+    const banner = $('update-banner');
+    const msg    = $('update-msg');
+    const btn    = $('update-btn');
+    if (!banner) return;
+
+    if (status === 'available') {
+      msg.textContent = `⬇️ Laster ned versjon ${version}…`;
+      btn.style.display = 'none';
+      banner.classList.add('show');
+    } else if (status === 'downloaded') {
+      msg.textContent = `✅ Versjon ${version} klar til installasjon`;
+      btn.style.display = '';
+      banner.classList.add('show');
+    }
+  });
+} catch {}
+
+function installUpdate() {
+  try { api.installUpdate(); } catch {}
+}
+
+</script>
+</body>
+</html>
