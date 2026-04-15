@@ -1,6 +1,6 @@
 {
   "name": "mitt-dashboard",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Personlig dashboard med Spotify",
   "main": "main.js",
   "scripts": {
